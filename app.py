@@ -11,10 +11,10 @@ from flask import Flask, jsonify, request, render_template_string
 # ==========================================
 app = Flask(__name__)
 DATA_FILES = {
-    'stops': 'stops.txt',
-    'stop_times': 'stop_times.txt',
-    'routes': 'routes.txt',
-    'trips': 'trips.txt'
+    'stops': 'Data/stops.txt',
+    'stop_times': 'Data/stop_times.txt',
+    'routes': 'Data/routes.txt',
+    'trips': 'Data/trips.txt'
 }
 
 
