@@ -10,7 +10,7 @@ from flask import Flask, jsonify, request, render_template_string
 # 1. CONFIGURATION & HTML TEMPLATE
 # ==========================================
 app = Flask(__name__)
-DATA_FOLDER = '/Users/anhadsinghjaj/Desktop/DMRC_GTFS/' # <--- UPDATE THIS PATH
+DATA_FOLDER = '/Users/anhadsinghjaj/Desktop/Data/' # <--- UPDATE THIS PATH
 
 # The entire Frontend (HTML+CSS+JS) is here for simplicity
 HTML_TEMPLATE = """
@@ -61,7 +61,7 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <div class="container">
-        <h1>🚇 Metro AI Planner</h1>
+        <h1>🚇 Delhi Metro ETA </h1>
         
         <div class="form-group">
             <label>Start Station</label>
