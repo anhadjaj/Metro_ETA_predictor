@@ -10,7 +10,7 @@ from flask import Flask, jsonify, request, render_template_string
 # 1. CONFIGURATION & HTML TEMPLATE
 # ==========================================
 app = Flask(__name__)
-DATA_FOLDER = '/Users/anhadsinghjaj/Desktop/Data/' # <--- UPDATE THIS PATH
+DATA_FOLDER = 'Data' # <--- UPDATE THIS PATH
 
 # The entire Frontend (HTML+CSS+JS) is here for simplicity
 HTML_TEMPLATE = """
