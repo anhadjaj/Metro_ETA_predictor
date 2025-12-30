@@ -10,9 +10,12 @@ from flask import Flask, jsonify, request, render_template_string
 # 1. CONFIGURATION & HTML TEMPLATE
 # ==========================================
 app = Flask(__name__)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FOLDER = os.path.join(BASE_DIR, 'Data')
-
+DATA_FILES = {
+    'stops': 'stops.txt',
+    'stop_times': 'stop_times.txt',
+    'routes': 'routes.txt',
+    'trips': 'trips.txt'
+}
 
 
 # The entire Frontend (HTML+CSS+JS) is here for simplicity
@@ -22,7 +25,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delhi Metro ETA</title>
+    <title>Delhi Metro AI Navigator</title>
     <style>
         :root { --primary: #2c3e50; --accent: #e74c3c; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
@@ -64,7 +67,7 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <div class="container">
-        <h1>🚇 Delhi Metro ETA </h1>
+        <h1>🚇 Metro AI Planner</h1>
         
         <div class="form-group">
             <label>Start Station</label>
@@ -186,22 +189,17 @@ stop_names_reverse = {}
 features_list = ['stop_id', 'next_stop_id', 'distance_km', 'curr_dep_min']
 
 # ==========================================
-# AUTO LOAD DATA ON APP START (Render-safe)
-# ==========================================
-load_data_and_train()
-
-
-# ==========================================
 # 3. BACKEND LOGIC
 # ==========================================
 def load_data_and_train():
     global G, model, stop_names_map, stop_names_reverse
     print("🚀 [System] Loading Data Files...")
     
-    stops = pd.read_csv(os.path.join(DATA_FOLDER, 'stops.txt'))
-    stop_times = pd.read_csv(os.path.join(DATA_FOLDER, 'stop_times.txt'))
-    routes = pd.read_csv(os.path.join(DATA_FOLDER, 'routes.txt'))
-    trips = pd.read_csv(os.path.join(DATA_FOLDER, 'trips.txt'))
+    stops = pd.read_csv(DATA_FILES['stops'])
+    stop_times = pd.read_csv(DATA_FILES['stop_times'])
+    routes = pd.read_csv(DATA_FILES['routes'])
+    trips = pd.read_csv(DATA_FILES['trips'])
+
 
     # Store Maps
     stop_names_map = stops.set_index('stop_id')['stop_name'].to_dict()
@@ -399,6 +397,8 @@ def api_predict():
         'segments': segments
     })
 
+# Main
 if __name__ == '__main__':
-    app.run(debug=True)
-
+    load_data_and_train()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
