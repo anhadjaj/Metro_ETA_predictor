@@ -1,0 +1,7 @@
+flask
+pandas
+numpy
+lightgbm
+networkx
+geopy
+gunicorn
