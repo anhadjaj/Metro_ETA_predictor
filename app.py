@@ -14,6 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FOLDER = os.path.join(BASE_DIR, 'Data')
 
 
+
 # The entire Frontend (HTML+CSS+JS) is here for simplicity
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -183,6 +184,12 @@ model = None
 stop_names_map = {}
 stop_names_reverse = {}
 features_list = ['stop_id', 'next_stop_id', 'distance_km', 'curr_dep_min']
+
+# ==========================================
+# AUTO LOAD DATA ON APP START (Render-safe)
+# ==========================================
+load_data_and_train()
+
 
 # ==========================================
 # 3. BACKEND LOGIC
@@ -392,8 +399,6 @@ def api_predict():
         'segments': segments
     })
 
-# Main
 if __name__ == '__main__':
-    load_data_and_train()
-    print("🌍 Server starting at http://127.0.0.1:5000")
     app.run(debug=True)
+
