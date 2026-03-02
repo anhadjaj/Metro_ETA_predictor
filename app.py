@@ -6,9 +6,6 @@ import networkx as nx
 from geopy.distance import geodesic
 from flask import Flask, jsonify, request, render_template_string
 
-# ==========================================
-# 1. CONFIGURATION & HTML TEMPLATE
-# ==========================================
 app = Flask(__name__)
 DATA_FILES = {
     'stops': 'https://drive.google.com/file/d/1oAR_gaJ20Axd9agmUGNtCCG2nMU3h7ND/view?usp=drive_link',
@@ -18,7 +15,6 @@ DATA_FILES = {
 }
 
 
-# The entire Frontend (HTML+CSS+JS) is here for simplicity
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -179,18 +175,13 @@ HTML_TEMPLATE = """
 </html>
 """
 
-# ==========================================
-# 2. GLOBAL VARIABLES (Loaded on Startup)
-# ==========================================
 G = None
 model = None
 stop_names_map = {}
 stop_names_reverse = {}
 features_list = ['stop_id', 'next_stop_id', 'distance_km', 'curr_dep_min']
 
-# ==========================================
-# 3. BACKEND LOGIC
-# ==========================================
+
 def load_data_and_train():
     global G, model, stop_names_map, stop_names_reverse
     print("🚀 [System] Loading Data Files...")
@@ -240,8 +231,7 @@ def load_data_and_train():
     
     data['distance_km'] = data.apply(lambda x: geodesic((x['lat_start'], x['lon_start']), (x['lat_end'], x['lon_end'])).km, axis=1)
 
-    # Train Model
-    print("🧠 [AI] Training LightGBM Model...")
+    print("Training LightGBM Model...")
     X = data[features_list].fillna(0)
     y = data['duration'].fillna(0)
     train_ds = lgb.Dataset(X, label=y, categorical_feature=['stop_id', 'next_stop_id'])
@@ -249,14 +239,12 @@ def load_data_and_train():
     params = {'objective': 'regression', 'metric': 'rmse', 'boosting_type': 'gbdt', 'num_leaves': 31, 'learning_rate': 0.1, 'verbose': -1}
     model = lgb.train(params, train_ds, num_boost_round=300)
 
-    # Build Graph
-    print("🕸 [Graph] Building Routing Network...")
+    print(" [Graph] Building Routing Network...")
     G = nx.DiGraph()
-    # Nodes
+
     for stop_id, name in stop_names_map.items():
         G.add_node(stop_id, name=name)
-    
-    # Rail Edges
+   
     unique_hops = data[['stop_id', 'next_stop_id', 'line_name', 'distance_km']].drop_duplicates(subset=['stop_id', 'next_stop_id'])
     for _, row in unique_hops.iterrows():
         G.add_edge(row['stop_id'], row['next_stop_id'], line=row['line_name'], dist=row['distance_km'], type='rail')
@@ -271,16 +259,12 @@ def load_data_and_train():
 
     print("✅ System Ready!")
 
-# ==========================================
-# 4. FLASK ROUTES
-# ==========================================
 @app.route('/')
 def index():
     return render_template_string(HTML_TEMPLATE)
 
 @app.route('/api/stations')
 def api_stations():
-    # Return sorted unique names for autocomplete
     return jsonify(sorted(list(set(stop_names_map.values()))))
 
 @app.route('/api/predict', methods=['POST'])
@@ -290,11 +274,9 @@ def api_predict():
     end_name = req.get('end')
     time_str = req.get('time', '09:00')
 
-    # Parse Time
     h, m = map(int, time_str.split(':'))
     start_time_min = h * 60 + m
 
-    # Resolve IDs
     u = stop_names_reverse.get(start_name.lower())
     v = stop_names_reverse.get(end_name.lower())
 
@@ -306,7 +288,6 @@ def api_predict():
     except nx.NetworkXNoPath:
         return jsonify({'error': 'No route available between these stations.'}), 400
 
-    # --- VECTORIZED PREDICTION LOGIC ---
     path_hops = []
     curr_t = start_time_min
 
@@ -325,20 +306,16 @@ def api_predict():
     
     df_path = pd.DataFrame(path_hops)
     
-    # Predict Rail
     rail_mask = df_path['type'] == 'rail'
     if rail_mask.any():
         preds = model.predict(df_path.loc[rail_mask, features_list])
         df_path.loc[rail_mask, 'pred_time'] = preds
     
-    # Predict Transfer
-    df_path.loc[~rail_mask, 'pred_time'] = 5.0 # Fixed transfer time
+    df_path.loc[~rail_mask, 'pred_time'] = 5.0
     
-    # Add Headway (Wait Time) logic
     df_path['wait_time'] = 0.0
-    if len(df_path) > 0: df_path.loc[0, 'wait_time'] = 2.5 # Initial wait
+    if len(df_path) > 0: df_path.loc[0, 'wait_time'] = 2.5
     
-    # Add wait after transfers
     transfer_indices = df_path.index[df_path['type'] == 'transfer'].tolist()
     for idx in transfer_indices:
         if idx + 1 in df_path.index:
@@ -346,7 +323,6 @@ def api_predict():
 
     df_path['total_hop_time'] = df_path['pred_time'] + df_path['wait_time']
 
-    # --- FORMAT JSON RESPONSE ---
     segments = []
     current_line = None
     seg_start = stop_names_map[path[0]]
@@ -356,7 +332,6 @@ def api_predict():
     for _, row in df_path.iterrows():
         line = row['line']
         
-        # If line changes, push previous segment
         if line != current_line:
             if current_line:
                 segments.append({
